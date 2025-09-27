@@ -1,0 +1,23 @@
+# GitHub Delivery Visibility Tool Dependencies
+# Using minimal dependencies to stay lightweight
+
+# HTTP requests for GitHub API
+requests>=2.31.0
+
+# YAML configuration parsing
+PyYAML>=6.0.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# Date parsing and manipulation
+python-dateutil>=2.8.2
+
+# Development dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Optional: For MCP integration later
+# mcp>=0.1.0

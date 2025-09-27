@@ -1,0 +1,84 @@
+# GitHub Delivery Visibility Configuration
+# Configuration for monitoring mozilla/bigquery-etl
+
+# GitHub repository settings
+github:
+  # Primary repository to monitor
+  repository: "mozilla/bigquery-etl"
+
+  # Your GitHub username for filtering review requests
+  username: "gkaberere"
+
+  # API settings
+  api_base_url: "https://api.github.com"
+
+  # Rate limiting (requests per minute)
+  rate_limit: 60
+
+# Time windows for different digest types
+time_windows:
+  daily_hours: 24
+  weekly_days: 7
+  monthly_days: 30
+
+# Output settings
+output:
+  # Base directory for outputs
+  base_dir: "out"
+
+  # Date format for directories
+  date_format: "%Y-%m-%d"
+
+  # Include raw PR data in appendix
+  include_raw_data: true
+
+# Categorization rules for mozilla/bigquery-etl
+categorization:
+  # Directory-based theme mapping
+  directory_themes:
+    "sql/moz-fx-data-shared-prod/": "Firefox Data Products"
+    "sql/moz-fx-data-marketing/": "Marketing Analytics"
+    "sql/moz-fx-data-experiments/": "Experiments & A/B Testing"
+    "dags/": "Airflow Pipelines"
+    "bigquery_etl/": "ETL Tooling & Infrastructure"
+    "tests/": "Testing & Quality"
+    "docs/": "Documentation"
+    "scripts/": "Automation Scripts"
+    ".github/": "CI/CD & Workflows"
+
+  # Label-based themes (fallback)
+  label_themes:
+    "bug": "Bug Fixes"
+    "enhancement": "Feature Enhancements"
+    "documentation": "Documentation"
+    "performance": "Performance Improvements"
+    "security": "Security Updates"
+    "dependencies": "Dependency Updates"
+
+# Review queue settings
+review_queue:
+  # PRs older than this many days without progress
+  stale_days: 3
+
+  # Include draft PRs in review queue
+  include_drafts: false
+
+  # Keywords that suggest urgency
+  urgent_keywords: ["urgent", "hotfix", "critical", "security"]
+
+# Privacy settings
+privacy:
+  # Enable code diff analysis via LLM for public repositories only
+  # This provides richer insights but sends code content to external services
+  enable_llm_analysis_public_repos: true
+
+# Digest formatting
+formatting:
+  # Maximum PRs to list per theme before summarizing
+  max_prs_per_theme: 8
+
+  # Include contributor names in summaries
+  show_contributors: true
+
+  # Include PR sizes (lines changed)
+  show_pr_sizes: true
