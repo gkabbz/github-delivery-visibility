@@ -207,7 +207,8 @@ class GitHubCollector:
             List of merged PullRequest objects
         """
         if until is None:
-            until = datetime.now()
+            from datetime import timezone
+            until = datetime.now(timezone.utc)
 
         # GitHub API expects ISO format
         since_str = since.strftime('%Y-%m-%dT%H:%M:%SZ')
