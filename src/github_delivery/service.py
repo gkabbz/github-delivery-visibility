@@ -142,6 +142,59 @@ class DeliveryVisibilityService:
         except GitHubAPIError as e:
             raise RuntimeError(f"Failed to generate daily digest: {e}")
 
+    def generate_biweekly_digest(self, end_date: Optional[datetime] = None,
+                                output_to_file: bool = True) -> Tuple[str, Optional[str]]:
+        """
+        Generate a biweekly digest report.
+
+        Args:
+            end_date: End date for the digest (defaults to today)
+            output_to_file: Whether to save to file
+
+        Returns:
+            Tuple of (markdown_content, file_path)
+        """
+        if end_date is None:
+            end_date = datetime.now()
+
+        print(f"Generating biweekly digest ending {end_date.strftime('%Y-%m-%d')}...")
+
+        # Define time window (14 days ending at end_date)
+        end_time = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        start_time = end_time - timedelta(days=14)
+
+        try:
+            # Collect merged PRs
+            merged_prs = self.collector.get_merged_prs(start_time, end_time)
+
+            # Categorize PRs into themes
+            themes = self.themer.categorize_pull_requests(merged_prs)
+
+            # Calculate statistics
+            stats = DigestStats.from_pull_requests(merged_prs)
+
+            # Generate markdown report
+            markdown_content = self.formatter.format_biweekly_digest(
+                themes=themes,
+                stats=stats,
+                start_date=start_time,
+                end_date=end_date,
+                repository=self.repository
+            )
+
+            # Save to file if requested
+            file_path = None
+            if output_to_file:
+                base_dir = self.config['output']['base_dir']
+                output_dir, filename = self.formatter.get_biweekly_output_path(base_dir, end_date)
+                file_path = self.formatter.save_to_file(markdown_content, output_dir, filename)
+                print(f"Biweekly digest saved to: {file_path}")
+
+            return markdown_content, file_path
+
+        except GitHubAPIError as e:
+            raise RuntimeError(f"Failed to generate biweekly digest: {e}")
+
     def generate_review_queue(self, username: Optional[str] = None,
                             output_to_file: bool = True) -> Tuple[str, Optional[str]]:
         """

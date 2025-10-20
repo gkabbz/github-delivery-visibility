@@ -104,6 +104,80 @@ class MarkdownFormatter:
 
         return "\n".join(lines)
 
+    def format_biweekly_digest(self, themes: List[DigestTheme], stats: DigestStats,
+                              start_date: datetime, end_date: datetime, repository: str) -> str:
+        """
+        Format a biweekly digest report.
+
+        Args:
+            themes: List of categorized themes with PRs
+            stats: Summary statistics for the period
+            start_date: Start date of the digest period
+            end_date: End date of the digest period
+            repository: Repository name
+
+        Returns:
+            Formatted markdown string
+        """
+        lines = []
+
+        # Header
+        lines.append(f"# Biweekly Delivery Digest")
+        lines.append("")
+        lines.append(f"**Period:** {start_date.strftime('%B %d, %Y')} - {end_date.strftime('%B %d, %Y')}")
+        lines.append(f"**Repository:** {repository}")
+        lines.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append("")
+
+        # Summary statistics
+        lines.append("## 📊 Summary")
+        lines.append("")
+        if stats.total_merged_prs == 0:
+            lines.append("No pull requests were merged in the last 2 weeks.")
+            lines.append("")
+        else:
+            lines.append(f"- **{stats.total_merged_prs}** pull requests merged")
+            lines.append(f"- **{stats.total_contributors}** contributors active")
+            lines.append(f"- **{stats.total_additions:,}** lines added, **{stats.total_deletions:,}** lines deleted")
+            lines.append(f"- **{stats.average_pr_size:.0f}** average lines changed per PR")
+            lines.append("")
+
+            # Top contributors
+            if stats.most_active_contributors:
+                lines.append("### 🏆 Most Active Contributors")
+                lines.append("")
+                for contributor, pr_count in stats.most_active_contributors[:10]:
+                    if pr_count == 1:
+                        lines.append(f"- **{contributor}** (1 PR)")
+                    else:
+                        lines.append(f"- **{contributor}** ({pr_count} PRs)")
+                lines.append("")
+
+        # Themes
+        if themes:
+            lines.append("## 🎯 Activity by Theme")
+            lines.append("")
+
+            for theme in themes:
+                lines.extend(self._format_theme_section(theme))
+
+        # Raw data appendix
+        if self.include_raw_data and themes:
+            lines.append("---")
+            lines.append("")
+            lines.append("## 📋 Complete PR List")
+            lines.append("")
+            all_prs = []
+            for theme in themes:
+                all_prs.extend(theme.pull_requests)
+
+            # Sort by merge time
+            all_prs.sort(key=lambda pr: pr.merged_at or pr.created_at, reverse=True)
+
+            lines.extend(self._format_pr_table(all_prs))
+
+        return "\n".join(lines)
+
     def format_review_queue(self, review_prs: List[PullRequest], user: str,
                           repository: str) -> str:
         """
@@ -341,6 +415,22 @@ class MarkdownFormatter:
         date_str = date.strftime(self.config.get('output', {}).get('date_format', '%Y-%m-%d'))
         output_dir = os.path.join(base_dir, date_str)
         filename = f"daily-digest-{date_str}.md"
+        return output_dir, filename
+
+    def get_biweekly_output_path(self, base_dir: str, end_date: datetime) -> tuple[str, str]:
+        """
+        Get the output directory and filename for a biweekly digest.
+
+        Args:
+            base_dir: Base output directory
+            end_date: End date for the digest
+
+        Returns:
+            Tuple of (output_dir, filename)
+        """
+        date_str = end_date.strftime(self.config.get('output', {}).get('date_format', '%Y-%m-%d'))
+        output_dir = os.path.join(base_dir, date_str)
+        filename = f"biweekly-digest-{date_str}.md"
         return output_dir, filename
 
     def get_review_queue_output_path(self, base_dir: str, user: str) -> tuple[str, str]:

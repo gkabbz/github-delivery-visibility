@@ -34,6 +34,9 @@ Examples:
   # Generate digest for specific date
   python -m src.github_delivery.cli daily-digest --date 2025-01-15
 
+  # Generate biweekly digest for last 2 weeks
+  python -m src.github_delivery.cli biweekly-digest
+
   # Generate review queue for yourself
   python -m src.github_delivery.cli review-queue
 
@@ -88,6 +91,18 @@ Examples:
         '--date',
         type=str,
         help='Target date for digest (YYYY-MM-DD, defaults to yesterday)'
+    )
+
+    # Biweekly digest command
+    biweekly_parser = subparsers.add_parser(
+        'biweekly-digest',
+        help='Generate biweekly delivery digest',
+        description='Generate a digest of merged PRs from the last 2 weeks'
+    )
+    biweekly_parser.add_argument(
+        '--end-date',
+        type=str,
+        help='End date for digest (YYYY-MM-DD, defaults to today)'
     )
 
     # Review queue command
@@ -203,6 +218,43 @@ def handle_daily_digest(service: DeliveryVisibilityService, args) -> int:
 
     except Exception as e:
         print(f"Error generating daily digest: {e}", file=sys.stderr)
+        return 1
+
+
+def handle_biweekly_digest(service: DeliveryVisibilityService, args) -> int:
+    """
+    Handle the biweekly-digest command.
+
+    Args:
+        service: DeliveryVisibilityService instance
+        args: Parsed command arguments
+
+    Returns:
+        Exit code (0 for success)
+    """
+    try:
+        # Parse end date
+        end_date = None
+        if args.end_date:
+            end_date = parse_date(args.end_date)
+
+        # Generate digest
+        markdown_content, file_path = service.generate_biweekly_digest(
+            end_date=end_date,
+            output_to_file=not args.no_file
+        )
+
+        if args.no_file:
+            print(markdown_content)
+        else:
+            print(f"Biweekly digest generated successfully!")
+            if file_path:
+                print(f"Output saved to: {file_path}")
+
+        return 0
+
+    except Exception as e:
+        print(f"Error generating biweekly digest: {e}", file=sys.stderr)
         return 1
 
 
@@ -422,6 +474,8 @@ def main() -> int:
         # Route to command handlers
         if args.command == 'daily-digest':
             return handle_daily_digest(service, args)
+        elif args.command == 'biweekly-digest':
+            return handle_biweekly_digest(service, args)
         elif args.command == 'review-queue':
             return handle_review_queue(service, args)
         elif args.command == 'analyze':

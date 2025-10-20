@@ -19,6 +19,7 @@ github:
 time_windows:
   daily_hours: 24
   weekly_days: 7
+  biweekly_days: 14
   monthly_days: 30
 
 # Output settings
