@@ -176,7 +176,9 @@ class PullRequest:
     @property
     def age_days(self) -> int:
         """Get age of PR in days."""
-        return (datetime.now().replace(tzinfo=self.created_at.tzinfo) - self.created_at).days
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        return (now - self.created_at).days
 
     @property
     def has_pending_reviews(self) -> bool:

@@ -7,7 +7,7 @@ for daily digests and review queues.
 
 import os
 import yaml
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
 
@@ -108,7 +108,8 @@ class DeliveryVisibilityService:
         print(f"Generating daily digest for {target_date.strftime('%Y-%m-%d')}...")
 
         # Define time window (last 24 hours from target date)
-        end_time = target_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        # Ensure timezone-aware datetimes for comparison with GitHub API responses
+        end_time = target_date.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
         start_time = end_time - timedelta(hours=24)
 
         try:
