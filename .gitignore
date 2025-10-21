@@ -166,3 +166,9 @@ outputs/
 .cache/
 cache/
 test_cache*/
+
+# Personal learning notes (not for version control)
+learnings.md
+
+# Test scripts (temporary)
+test_bigquery_access.py

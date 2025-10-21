@@ -15,11 +15,6 @@ clustering:
 
 columns:
   # === IDENTITY ===
-  - name: id
-    type: INTEGER
-    mode: REQUIRED
-    description: "Auto-generated unique file change ID"
-
   - name: repo_name
     type: STRING
     mode: REQUIRED
