@@ -144,90 +144,48 @@
 
 ## Phase 1: MVP - Data Foundation (Days 3-7)
 
-### Day 3: Embedding Generation
+### Day 3-4: Embedding & Loading ✅ COMPLETED
 
-**T1.1: Build EmbeddingGenerator Component**
-- [ ] Create `src/github_delivery/embeddings.py`
-- [ ] Implement `EmbeddingGenerator` class
-- [ ] Integrate Vertex AI textembedding-gecko@003
-- [ ] Add batch embedding support (100 texts/batch)
-- [ ] Add error handling and retry logic
-- [ ] Write unit tests
+**T1.1: Build EmbeddingGenerator Component** ✅
+- [x] Created `src/github_delivery/embeddings.py`
+- [x] Implemented `EmbeddingGenerator` class using text-embedding-004
+- [x] Integrated Vertex AI with mozdata project
+- [x] Added batch embedding support (configurable batch size)
+- [x] Added error handling for empty texts
+- [x] Tested with real PR data
 
 **Owner:** George
-**Time Estimate:** 4 hours
-**Dependencies:** T0.3
-**Success Criteria:** Can generate 768-dim embeddings for sample text
-
-**Code Skeleton:**
-```python
-from google.cloud import aiplatform
-
-class EmbeddingGenerator:
-    def __init__(self, project_id: str, location: str = "us-central1"):
-        self.project_id = project_id
-        self.location = location
-
-    def generate_embedding(self, text: str) -> List[float]:
-        """Generate 768-dim embedding for single text"""
-        pass
-
-    def generate_batch_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for batch of texts"""
-        pass
-```
+**Status:** Complete
+**Success Criteria:** ✅ Can generate 768-dim embeddings for sample text
 
 ---
 
-**T1.2: Enhance GitHubCollector for Embeddings**
-- [ ] Update `collector.py` to generate embeddings during collection
-- [ ] Add embedding generation to PR body, review comments
-- [ ] Handle cases where text is None or empty
-- [ ] Add progress logging
-- [ ] Test with existing cached PRs
+**T1.2: Build BigQueryLoader Component** ✅
+- [x] Created `src/github_delivery/bigquery_loader.py`
+- [x] Implemented `BigQueryLoader` class
+- [x] Added methods for loading all tables with embeddings:
+  - PRs with body embeddings
+  - Reviews with body embeddings
+  - Files with patch embeddings
+  - Labels (no embeddings)
+- [x] Tested with real mozilla/bigquery-etl PRs from cache
 
 **Owner:** George
-**Time Estimate:** 3 hours
-**Dependencies:** T1.1
-**Success Criteria:** Collector enriches PRs with embeddings
+**Status:** Complete
+**Success Criteria:** ✅ Can load PR data to BigQuery tables with embeddings
 
 ---
 
-### Day 4: BigQuery Data Loading
+**T1.3: DataPipeline Orchestrator** ⚠️ DEFERRED TO PHASE 2
 
-**T1.3: Build BigQueryLoader Component**
-- [ ] Create `src/github_delivery/bq_loader.py`
-- [ ] Implement `BigQueryLoader` class
-- [ ] Add methods for loading:
-  - PRs with embeddings
-  - Reviews with embeddings
-  - Files with embeddings
-  - Labels
-- [ ] Implement MERGE logic for idempotency
-- [ ] Add batch loading (100-500 rows per batch)
-- [ ] Write unit tests with mocks
+**Reason for deferral:** Will use Airflow for orchestration in production. The existing components (GitHubCollector, EmbeddingGenerator, BigQueryLoader) are already composable and can be called directly from Airflow tasks.
 
-**Owner:** George
-**Time Estimate:** 4 hours
-**Dependencies:** T0.4
-**Success Criteria:** Can load PR data to BigQuery tables
+**Phase 2 Airflow approach:**
+- Task 1: `collect_prs()` → Uses existing GitHubCollector
+- Task 2: `load_to_bigquery()` → Uses EmbeddingGenerator + BigQueryLoader
+- Airflow handles: scheduling, retries, logging, monitoring
 
----
-
-**T1.4: Build DataPipeline Orchestrator**
-- [ ] Create `src/github_delivery/pipeline.py`
-- [ ] Implement `DataPipeline` class that coordinates:
-  - GitHub collection
-  - Embedding generation
-  - BigQuery loading
-- [ ] Add comprehensive logging
-- [ ] Add error handling with retries
-- [ ] Create CLI command: `github-delivery collect`
-
-**Owner:** George
-**Time Estimate:** 3 hours
-**Dependencies:** T1.2, T1.3
-**Success Criteria:** Can run end-to-end collection pipeline locally
+**Decision:** Skip building a separate DataPipeline class. Move directly to Data Access Layer.
 
 ---
 
