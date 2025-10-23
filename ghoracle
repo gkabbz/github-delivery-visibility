@@ -1,0 +1,10 @@
+#!/bin/bash
+# GitHubOracle - Shortcut script for asking questions
+
+# Get the directory where this script lives
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Activate virtual environment and run the command
+source "$SCRIPT_DIR/venv/bin/activate"
+python -m src.github_delivery.cli ask "$@"
+deactivate

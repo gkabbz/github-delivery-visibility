@@ -333,7 +333,29 @@
 
 ### Week 2: Query Completeness
 
-**T2.1: Implement All P0 Queries**
+**T2.1: Create User Lookup Table**
+- [ ] Design schema for `github_users` table:
+  - `github_login` (primary key, e.g., "gkabbz")
+  - `display_name` (e.g., "George Kaberere")
+  - `aliases` (array of common name variations)
+  - `email` (optional)
+- [ ] Update `schemas/users.yaml`
+- [ ] Create table in BigQuery
+- [ ] Populate initial user data from existing PRs
+- [ ] Update `BigQueryDataSource.find_prs_by_author()` to support name lookup
+- [ ] Add `resolve_user_name()` helper method
+- [ ] Test queries with both GitHub logins and display names
+
+**Owner:** George
+**Time Estimate:** 3 hours
+**Dependencies:** Phase 1 complete
+**Success Criteria:** Can query "George's PRs" and it resolves to "gkabbz"
+
+**Motivation:** Users will naturally ask about people by their real names (e.g., "What did George ship?") rather than GitHub handles (e.g., "What did gkabbz ship?"). This lookup table enables natural language queries.
+
+---
+
+**T2.2: Implement All P0 Queries**
 - [ ] PR Investigation queries:
   - "Who reviewed PR #X?"
   - "How long did PR #X take to merge?"
@@ -349,12 +371,12 @@
 
 **Owner:** George
 **Time Estimate:** 8 hours
-**Dependencies:** Phase 1 complete
+**Dependencies:** T2.1
 **Success Criteria:** All P0 queries from business requirements work
 
 ---
 
-**T2.2: Build InsightSynthesizer**
+**T2.3: Build InsightSynthesizer**
 - [ ] Create `src/github_delivery/llm_synthesizer.py`
 - [ ] Implement `InsightSynthesizer` class
 - [ ] Create prompt templates for:
