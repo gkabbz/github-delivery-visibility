@@ -1,8 +1,8 @@
 """
 Command-line interface for GitHub delivery visibility tool.
 
-Provides commands for generating daily digests, review queues, and analyzing
-repository activity from the command line.
+Main command: ask - Ask natural language questions about PRs
+Legacy commands (daily-digest, review-queue, etc.) require old service.py (removed)
 """
 
 import argparse
@@ -12,7 +12,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
-from .service import DeliveryVisibilityService
+# Note: Old DeliveryVisibilityService removed - legacy commands disabled
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -162,6 +162,23 @@ Examples:
         description='Display basic information about the configured repository'
     )
 
+    # Ask command (NEW - uses GitHubOracle)
+    ask_parser = subparsers.add_parser(
+        'ask',
+        help='Ask a natural language question about PRs',
+        description='Ask questions like "What did Alice ship last week?" or "Tell me about PR #123"'
+    )
+    ask_parser.add_argument(
+        'question',
+        type=str,
+        help='Natural language question to ask'
+    )
+    ask_parser.add_argument(
+        '--repo',
+        type=str,
+        help='Repository name (e.g., mozilla/bigquery-etl)'
+    )
+
     return parser
 
 
@@ -184,7 +201,7 @@ def parse_date(date_str: str) -> datetime:
         raise ValueError(f"Invalid date format: {date_str}. Use YYYY-MM-DD format.")
 
 
-def handle_daily_digest(service: DeliveryVisibilityService, args) -> int:
+def handle_daily_digest(service, args) -> int:
     """
     Handle the daily-digest command.
 
@@ -221,7 +238,7 @@ def handle_daily_digest(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
-def handle_biweekly_digest(service: DeliveryVisibilityService, args) -> int:
+def handle_biweekly_digest(service, args) -> int:
     """
     Handle the biweekly-digest command.
 
@@ -258,7 +275,7 @@ def handle_biweekly_digest(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
-def handle_review_queue(service: DeliveryVisibilityService, args) -> int:
+def handle_review_queue(service, args) -> int:
     """
     Handle the review-queue command.
 
@@ -290,7 +307,7 @@ def handle_review_queue(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
-def handle_analyze(service: DeliveryVisibilityService, args) -> int:
+def handle_analyze(service, args) -> int:
     """
     Handle the analyze command.
 
@@ -348,7 +365,7 @@ def handle_analyze(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
-def handle_test_connection(service: DeliveryVisibilityService, args) -> int:
+def handle_test_connection(service, args) -> int:
     """
     Handle the test-connection command.
 
@@ -369,7 +386,7 @@ def handle_test_connection(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
-def handle_debug_pr(service: DeliveryVisibilityService, args) -> int:
+def handle_debug_pr(service, args) -> int:
     """
     Handle the debug-pr command.
 
@@ -415,7 +432,7 @@ def handle_debug_pr(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
-def handle_repo_info(service: DeliveryVisibilityService, args) -> int:
+def handle_repo_info(service, args) -> int:
     """
     Handle the repo-info command.
 
@@ -447,6 +464,67 @@ def handle_repo_info(service: DeliveryVisibilityService, args) -> int:
         return 1
 
 
+def handle_ask(args) -> int:
+    """
+    Handle the ask command using GitHubOracle.
+
+    Args:
+        args: Parsed command arguments
+
+    Returns:
+        Exit code (0 for success)
+    """
+    try:
+        from dotenv import load_dotenv
+        from .llm_client import AnthropicLLMClient
+        from .bq_data_source import BigQueryDataSource
+        from .github_oracle import GitHubOracle
+
+        # Load environment
+        load_dotenv()
+
+        # Get config from environment or args
+        project_id = os.getenv("BQ_PROJECT_ID", "mozdata-nonprod")
+        dataset_id = os.getenv("BQ_DATASET_ID", "analysis")
+        table_prefix = os.getenv("TABLE_PREFIX", "gkabbz_gh")
+        repo_name = args.repo or os.getenv("GITHUB_REPOSITORY", "mozilla/bigquery-etl")
+
+        # Initialize components
+        if args.verbose:
+            print("🔮 Initializing GitHubOracle...")
+            print(f"  Project: {project_id}")
+            print(f"  Dataset: {dataset_id}")
+            print(f"  Table prefix: {table_prefix}")
+            print(f"  Repository: {repo_name}")
+            print()
+
+        data_source = BigQueryDataSource(
+            project_id=project_id,
+            dataset_id=dataset_id,
+            table_prefix=table_prefix
+        )
+        llm_client = AnthropicLLMClient()
+        oracle = GitHubOracle(data_source, llm_client)
+
+        # Ask question
+        if args.verbose:
+            print(f"❓ Question: {args.question}\n")
+
+        answer = oracle.ask(args.question, repo_name=repo_name)
+
+        # Print answer
+        print(answer)
+
+        return 0
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
 def main() -> int:
     """
     Main CLI entry point.
@@ -463,31 +541,20 @@ def main() -> int:
         return 1
 
     try:
-        # Initialize service
-        service = DeliveryVisibilityService(config_path=args.config)
-
-        if args.verbose:
-            print(f"Initialized service for repository: {service.repository}")
-            print(f"Configured username: {service.username}")
-            print()
-
         # Route to command handlers
-        if args.command == 'daily-digest':
-            return handle_daily_digest(service, args)
-        elif args.command == 'biweekly-digest':
-            return handle_biweekly_digest(service, args)
-        elif args.command == 'review-queue':
-            return handle_review_queue(service, args)
-        elif args.command == 'analyze':
-            return handle_analyze(service, args)
-        elif args.command == 'test-connection':
-            return handle_test_connection(service, args)
-        elif args.command == 'debug-pr':
-            return handle_debug_pr(service, args)
-        elif args.command == 'repo-info':
-            return handle_repo_info(service, args)
+        if args.command == 'ask':
+            # Main GitHubOracle command
+            return handle_ask(args)
+        elif args.command in ['daily-digest', 'biweekly-digest', 'review-queue',
+                              'analyze', 'test-connection', 'debug-pr', 'repo-info']:
+            # Legacy commands - service.py was removed
+            print(f"⚠️  '{args.command}' command requires old service.py (removed in MVP)", file=sys.stderr)
+            print(f"Use 'ask' command instead:", file=sys.stderr)
+            print(f"  ghoracle \"What PRs were merged yesterday?\"", file=sys.stderr)
+            return 1
         else:
             print(f"Unknown command: {args.command}", file=sys.stderr)
+            print(f"Available command: ask", file=sys.stderr)
             return 1
 
     except FileNotFoundError as e:
