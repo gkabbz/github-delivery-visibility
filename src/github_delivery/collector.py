@@ -232,7 +232,8 @@ class GitHubCollector:
                 continue
 
             merged_at = datetime.fromisoformat(pr_item['merged_at'].replace('Z', '+00:00'))
-            if merged_at < since or merged_at > until:
+            # Note: until is exclusive (e.g., end_date + 1 day from user input)
+            if merged_at < since or merged_at >= until:
                 continue
 
             pr_number = pr_item['number']

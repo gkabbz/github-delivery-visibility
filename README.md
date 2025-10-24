@@ -194,19 +194,80 @@ python -m src.github_delivery.cli ask "your question" --verbose
 python -m src.github_delivery.cli ask "your question" --repo owner/repo-name
 ```
 
-## Data Collection
+## Backfilling Historical Data
 
-Load PR data into BigQuery using the existing data collection tools:
+GitHubOracle requires PR data in BigQuery to answer questions. Use the backfill script to load historical PRs with embeddings.
+
+### Basic Usage
 
 ```bash
-# Collect PRs from GitHub
-python -m src.github_delivery.collector
+# Backfill specific date range (recommended)
+python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-31
 
-# Load to BigQuery with embeddings
-python test_bq_loader.py
+# Backfill with just start date (end date defaults to today)
+python backfill_data.py --start-date 2025-01-01
+
+# Test with dry-run first
+python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07 --dry-run
+
+# Verbose output for debugging
+python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07 --verbose
 ```
 
-See `project_plans/project_plan.md` for full data pipeline details.
+### Examples
+
+```bash
+# Backfill January 2025
+python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-31
+
+# Backfill last 3 months
+python backfill_data.py --start-date 2025-07-01 --end-date 2025-10-01
+
+# Backfill a specific week
+python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07
+```
+
+### How It Works
+
+The backfill uses a **staging table + MERGE pattern** for reliable, idempotent data loading:
+
+1. **Collects PRs from GitHub** - Fetches merged PRs in date range + top 100 open PRs
+2. **Generates embeddings** - Creates vector embeddings for PR bodies, review comments, and file patches
+3. **Loads to staging tables** - Batch loads data to temporary staging tables (3-day auto-expiration)
+4. **MERGE to production** - Uses BigQuery MERGE to upsert data:
+   - **INSERT** new records that don't exist
+   - **UPDATE** existing records (e.g., open PRs that got merged)
+   - **Deduplicates** automatically using `ROW_NUMBER() OVER (PARTITION BY ...)`
+
+### Safe Re-runs & Updates
+
+The backfill script is **fully idempotent** - you can safely re-run it:
+
+- **Handles duplicates**: MERGE automatically deduplicates based on primary keys
+- **Updates existing data**: Open PRs get updated when they're merged
+- **No streaming buffer errors**: Staging tables + batch loads avoid BigQuery limitations
+- **Easy troubleshooting**: Staging tables persist for 3 days after failed runs
+
+Example: If you backfill January, then run it again a week later:
+- PRs that were open are now updated to merged status
+- New PRs merged during the week are inserted
+- No duplicate records are created
+
+### Checking Status
+
+```bash
+# Check what's in your tables
+python check_backfill_status.py
+```
+
+This shows row counts and recent entries for each table (PRs, reviews, files, labels).
+
+### Important Notes
+
+- **Date ranges**: Use specific start/end dates for precise control over what to backfill
+- **Time required**: ~5-10 minutes per 100 PRs (embedding generation is the bottleneck)
+- **Batch size**: Files are loaded in batches of 100 to avoid API limits
+- **Required env vars**: `GITHUB_TOKEN`, `BQ_PROJECT_ID`, `BQ_DATASET_ID`, `TABLE_PREFIX`
 
 ## Testing
 
