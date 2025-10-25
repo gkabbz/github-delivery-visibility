@@ -175,8 +175,9 @@ outputs/
 cache/
 test_cache*/
 
-# Personal learning notes (not for version control)
+# Personal learning notes and working guidelines (not for version control)
 learnings.md
+CLAUDE.md
 
 # Test scripts in root (should be in tests/ directory)
 test_*.py
