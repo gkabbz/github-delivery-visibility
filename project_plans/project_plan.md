@@ -99,317 +99,242 @@
 
 ## 3. Detailed Phase Breakdown
 
-## Phase 0: Setup & Planning (Days 1-2)
+## Phase 0: Setup & Planning ✅ COMPLETED
 
-### Day 1: GCP Setup
+**Status:** Complete (Oct 20, 2025)
 
-**Tasks:**
+**Completed Tasks:**
 
-**T0.1: GCP Project Configuration**
-- [ ] Verify access to `moz-fx-data-shared-prod` project
-- [ ] Create BigQuery dataset: `github_prs`
-- [ ] Set up service accounts:
-  - `collector-sa` (BigQuery write, Vertex AI user)
-  - `query-sa` (BigQuery read, Vertex AI user)
-- [ ] Configure IAM roles
+**T0.1: GCP Project Configuration** ✅
+- [x] Verified access to `mozdata-nonprod` project
+- [x] Using existing `analysis` dataset
+- [x] Tested BigQuery table creation permissions
 
-**Owner:** George
-**Time Estimate:** 2 hours
-**Dependencies:** GCP project access
-**Success Criteria:** Can create BigQuery tables and run queries with service account
+**T0.2: Development Environment** ✅
+- [x] Set up Python 3.12 virtual environment (`venv/`)
+- [x] Installed dependencies:
+  - `google-cloud-bigquery>=3.11.0`
+  - `google-cloud-aiplatform>=1.38.0`
+  - `anthropic>=0.7.0`
+- [x] GitHub API connection validated
 
----
+**T0.3: BigQuery Schema Creation** ✅
+- [x] Created YAML schema definitions for all 4 tables
+- [x] Built schema creation script (`create_schema.py`)
+- [x] Created tables:
+  - `gkabbz_gh_prs` (19 columns, partitioned by `merged_at`)
+  - `gkabbz_gh_reviews` (10 columns, partitioned by `submitted_at`)
+  - `gkabbz_gh_files` (11 columns, clustered)
+  - `gkabbz_gh_labels` (5 columns, clustered)
+- [x] Verified partitioning and clustering applied
+- [x] Documented schemas in `src/github_delivery/schemas/`
 
-**T0.2: Secrets Management**
-- [ ] Create secrets in Cloud Secret Manager:
-  - `github-token` (GitHub PAT with repo read access)
-  - `anthropic-api-key` (Claude API key)
-- [ ] Grant service accounts access to secrets
-- [ ] Test secret retrieval
+**Deliverables:**
+- ✅ BigQuery tables with vector embedding support
+- ✅ Clean YAML schema definitions
+- ✅ Development environment ready
+- ✅ Dependencies installed
 
-**Owner:** George
-**Time Estimate:** 1 hour
-**Dependencies:** T0.1
-**Success Criteria:** Can retrieve secrets programmatically
-
----
-
-**T0.3: Development Environment**
-- [ ] Clone existing repository
-- [ ] Set up Python 3.11+ virtual environment
-- [ ] Install dependencies (add new ones to requirements.txt):
-  - `google-cloud-bigquery`
-  - `google-cloud-aiplatform`
-  - `anthropic`
-- [ ] Configure local `.env` file
-- [ ] Test GitHub API connection
-- [ ] Test Anthropic API connection
-
-**Owner:** George
-**Time Estimate:** 2 hours
-**Dependencies:** None
-**Success Criteria:** Can run existing collector locally, APIs respond
-
----
-
-### Day 2: BigQuery Schema Creation
-
-**T0.4: Create BigQuery Tables**
-- [ ] Execute DDL scripts from Appendix A of architecture plan
-  - Create `github_prs.prs` table
-  - Create `github_prs.reviews` table
-  - Create `github_prs.files` table
-  - Create `github_prs.labels` table
-- [ ] Verify partitioning and clustering applied
-- [ ] Test insert/query operations
-- [ ] Document table schemas in repository
-
-**Owner:** George
-**Time Estimate:** 2 hours
-**Dependencies:** T0.1
-**Success Criteria:** All tables created, can insert and query test data
-
----
-
-**T0.5: Architecture Review & Validation**
-- [ ] Review architecture plan with stakeholders (if applicable)
-- [ ] Validate BigQuery schema matches requirements
-- [ ] Confirm API rate limits and quotas
-- [ ] Create project tracking board (GitHub Issues or similar)
-
-**Owner:** George
-**Time Estimate:** 1 hour
-**Dependencies:** T0.4
-**Success Criteria:** Plan approved, tracking system ready
+**Deferred to Later:**
+- Service accounts (will use personal credentials for development)
+- Secret Manager (will use local `.env` file)
+- Cloud Run deployment (Phase 2)
 
 ---
 
 ## Phase 1: MVP - Data Foundation (Days 3-7)
 
-### Day 3: Embedding Generation
+### Day 3-4: Embedding & Loading ✅ COMPLETED
 
-**T1.1: Build EmbeddingGenerator Component**
-- [ ] Create `src/github_delivery/embeddings.py`
-- [ ] Implement `EmbeddingGenerator` class
-- [ ] Integrate Vertex AI textembedding-gecko@003
-- [ ] Add batch embedding support (100 texts/batch)
-- [ ] Add error handling and retry logic
-- [ ] Write unit tests
+**T1.1: Build EmbeddingGenerator Component** ✅
+- [x] Created `src/github_delivery/embeddings.py`
+- [x] Implemented `EmbeddingGenerator` class using text-embedding-004
+- [x] Integrated Vertex AI with mozdata project
+- [x] Added batch embedding support (configurable batch size)
+- [x] Added error handling for empty texts
+- [x] Tested with real PR data
 
 **Owner:** George
-**Time Estimate:** 4 hours
-**Dependencies:** T0.3
-**Success Criteria:** Can generate 768-dim embeddings for sample text
-
-**Code Skeleton:**
-```python
-from google.cloud import aiplatform
-
-class EmbeddingGenerator:
-    def __init__(self, project_id: str, location: str = "us-central1"):
-        self.project_id = project_id
-        self.location = location
-
-    def generate_embedding(self, text: str) -> List[float]:
-        """Generate 768-dim embedding for single text"""
-        pass
-
-    def generate_batch_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Generate embeddings for batch of texts"""
-        pass
-```
+**Status:** Complete
+**Success Criteria:** ✅ Can generate 768-dim embeddings for sample text
 
 ---
 
-**T1.2: Enhance GitHubCollector for Embeddings**
-- [ ] Update `collector.py` to generate embeddings during collection
-- [ ] Add embedding generation to PR body, review comments
-- [ ] Handle cases where text is None or empty
-- [ ] Add progress logging
-- [ ] Test with existing cached PRs
+**T1.2: Build BigQueryLoader Component** ✅
+- [x] Created `src/github_delivery/bigquery_loader.py`
+- [x] Implemented `BigQueryLoader` class
+- [x] Added methods for loading all tables with embeddings:
+  - PRs with body embeddings
+  - Reviews with body embeddings
+  - Files with patch embeddings
+  - Labels (no embeddings)
+- [x] Tested with real mozilla/bigquery-etl PRs from cache
+- [x] **Enhanced (Oct 23):** Added idempotent loading with duplicate detection
+- [x] **Enhanced (Oct 23):** Added batch inserts to handle BigQuery request size limits
 
 **Owner:** George
-**Time Estimate:** 3 hours
-**Dependencies:** T1.1
-**Success Criteria:** Collector enriches PRs with embeddings
+**Status:** Complete
+**Success Criteria:** ✅ Can load PR data to BigQuery tables with embeddings (idempotent, resilient)
 
 ---
 
-### Day 4: BigQuery Data Loading
+**T1.3: DataPipeline Orchestrator** ⚠️ DEFERRED TO PHASE 2
 
-**T1.3: Build BigQueryLoader Component**
-- [ ] Create `src/github_delivery/bq_loader.py`
-- [ ] Implement `BigQueryLoader` class
-- [ ] Add methods for loading:
-  - PRs with embeddings
-  - Reviews with embeddings
-  - Files with embeddings
-  - Labels
-- [ ] Implement MERGE logic for idempotency
-- [ ] Add batch loading (100-500 rows per batch)
-- [ ] Write unit tests with mocks
+**Reason for deferral:** Will use Airflow for orchestration in production. The existing components (GitHubCollector, EmbeddingGenerator, BigQueryLoader) are already composable and can be called directly from Airflow tasks.
 
-**Owner:** George
-**Time Estimate:** 4 hours
-**Dependencies:** T0.4
-**Success Criteria:** Can load PR data to BigQuery tables
+**Phase 2 Airflow approach:**
+- Task 1: `collect_prs()` → Uses existing GitHubCollector
+- Task 2: `load_to_bigquery()` → Uses EmbeddingGenerator + BigQueryLoader
+- Airflow handles: scheduling, retries, logging, monitoring
+
+**Decision:** Skip building a separate DataPipeline class. Move directly to Data Access Layer.
 
 ---
 
-**T1.4: Build DataPipeline Orchestrator**
-- [ ] Create `src/github_delivery/pipeline.py`
-- [ ] Implement `DataPipeline` class that coordinates:
-  - GitHub collection
-  - Embedding generation
-  - BigQuery loading
-- [ ] Add comprehensive logging
-- [ ] Add error handling with retries
-- [ ] Create CLI command: `github-delivery collect`
+### Day 5: Data Access Layer ✅ COMPLETED
 
-**Owner:** George
-**Time Estimate:** 3 hours
-**Dependencies:** T1.2, T1.3
-**Success Criteria:** Can run end-to-end collection pipeline locally
-
----
-
-### Day 5: Data Access Layer
-
-**T1.5: Build Abstract PRDataSource Interface**
-- [ ] Create `src/github_delivery/data_source.py`
-- [ ] Define `PRDataSource` abstract class with methods:
+**T1.5: Build Abstract PRDataSource Interface** ✅
+- [x] Create `src/github_delivery/data_source.py`
+- [x] Define `PRDataSource` abstract class with methods:
   - `find_prs_by_author()`
   - `find_prs_by_reviewer()`
   - `find_prs_by_date_range()`
+  - `find_prs_by_file()`
+  - `find_prs_by_directory()`
   - `semantic_search()`
   - `get_pr_detail()`
-- [ ] Document interface with docstrings
+- [x] Document interface with docstrings
 
 **Owner:** George
-**Time Estimate:** 2 hours
-**Dependencies:** None
-**Success Criteria:** Abstract interface defined and documented
+**Status:** Complete
+**Success Criteria:** ✅ Abstract interface defined and documented
 
 ---
 
-**T1.6: Implement BigQueryDataSource**
-- [ ] Create `src/github_delivery/bq_data_source.py`
-- [ ] Implement `BigQueryDataSource` class
-- [ ] Implement structured queries:
+**T1.6: Implement BigQueryDataSource** ✅
+- [x] Create `src/github_delivery/bq_data_source.py`
+- [x] Implement `BigQueryDataSource` class
+- [x] Implement structured queries:
   - `find_prs_by_author()` → SQL query
   - `find_prs_by_reviewer()` → SQL with JOIN
   - `find_prs_by_date_range()` → SQL with date filter
-- [ ] Implement basic semantic search:
+  - `find_prs_by_file()` → SQL with file lookup
+  - `find_prs_by_directory()` → SQL with LIKE pattern
+- [x] Implement semantic search:
   - Generate query embedding
-  - Use VECTOR_SEARCH or COSINE_DISTANCE
+  - Use COSINE_DISTANCE with threshold
   - Return top N results
-- [ ] Add result transformation (BigQuery Row → PullRequest object)
-- [ ] Write integration tests
+- [x] Add result transformation (BigQuery Row → PullRequest object)
+- [x] Write integration tests
 
 **Owner:** George
-**Time Estimate:** 5 hours
-**Dependencies:** T1.5, T1.1
-**Success Criteria:** Can query BigQuery for PRs using Python interface
+**Status:** Complete
+**Success Criteria:** ✅ Can query BigQuery for PRs using Python interface
 
 ---
 
-### Day 6: LLM Integration
+### Day 6: LLM Integration ✅ COMPLETED
 
-**T1.7: Build LLMClient**
-- [ ] Create `src/github_delivery/llm_client.py`
-- [ ] Define `LLMClient` abstract interface
-- [ ] Implement `AnthropicLLMClient` class
-- [ ] Add retry logic and error handling
-- [ ] Add token counting and cost tracking
-- [ ] Write unit tests with mocked API
+**T1.7: Build LLMClient** ✅
+- [x] Create `src/github_delivery/llm_client.py`
+- [x] Define `LLMClient` abstract interface
+- [x] Implement `AnthropicLLMClient` class
+- [x] Add retry logic and error handling
+- [x] Add token counting and cost tracking
+- [x] Write unit tests with mocked API
 
 **Owner:** George
-**Time Estimate:** 3 hours
-**Dependencies:** T0.3
-**Success Criteria:** Can call Claude API reliably
+**Status:** Complete
+**Success Criteria:** ✅ Can call Claude API reliably
 
 ---
 
-**T1.8: Build LLMQueryPlanner**
-- [ ] Create `src/github_delivery/llm_planner.py`
-- [ ] Implement `LLMQueryPlanner` class
-- [ ] Create prompt template for query planning
-- [ ] Parse LLM response into structured `QueryPlan`
-- [ ] Handle 3 query types:
+**T1.8: Build QueryPlanner** ✅
+- [x] Create `src/github_delivery/query_planner.py`
+- [x] Implement `QueryPlanner` class
+- [x] Create prompt template for query planning
+- [x] Parse LLM response into structured `QueryPlan`
+- [x] Handle 3 query types:
   - Structured (metadata only)
   - Semantic (vector search)
   - Hybrid (both)
-- [ ] Test with sample questions
+- [x] Test with sample questions
 
 **Owner:** George
-**Time Estimate:** 4 hours
-**Dependencies:** T1.7
-**Success Criteria:** Can translate natural language to query plans
+**Status:** Complete
+**Success Criteria:** ✅ Can translate natural language to query plans
 
 ---
 
-### Day 7: MVP Assembly & Testing
+### Day 7: MVP Assembly & Testing ✅ COMPLETED
 
-**T1.9: Build SecondBrain Application**
-- [ ] Create `src/github_delivery/second_brain.py`
-- [ ] Implement `SecondBrain` class
-- [ ] Wire together components:
+**T1.9: Build GitHubOracle Application** ✅
+- [x] Create `src/github_delivery/github_oracle.py`
+- [x] Implement `GitHubOracle` class (renamed from SecondBrain)
+- [x] Wire together components:
   - DataSource
   - LLMClient
   - QueryPlanner
   - EmbeddingGenerator
-- [ ] Implement `ask()` method:
+- [x] Implement `ask()` method:
   - Plan query
   - Execute via DataSource
   - Synthesize answer with LLM
-- [ ] Test with 3 core questions:
-  - "What shipped last week?"
-  - "Who reviewed PR #8244?"
-  - "What changed in monitoring_derived?"
+- [x] Test with multiple questions across all query types
 
 **Owner:** George
-**Time Estimate:** 4 hours
-**Dependencies:** T1.6, T1.8
-**Success Criteria:** Can answer questions end-to-end
+**Status:** Complete
+**Success Criteria:** ✅ Can answer questions end-to-end
 
 ---
 
-**T1.10: Build MVP CLI**
-- [ ] Update `src/github_delivery/cli.py`
-- [ ] Add command: `github-delivery ask "<question>"`
-- [ ] Add command: `github-delivery collect`
-- [ ] Add basic output formatting
-- [ ] Test interactively
+**T1.10: Build MVP CLI** ✅
+- [x] Create `src/github_delivery/cli.py`
+- [x] Add command: `ghoracle ask "<question>"`
+- [x] Add `--verbose` flag for debugging
+- [x] Add `--repo` flag for repository selection
+- [x] Add basic output formatting
+- [x] Create convenience script: `ghoracle`
+- [x] Test interactively with various queries
 
 **Owner:** George
-**Time Estimate:** 2 hours
-**Dependencies:** T1.9
-**Success Criteria:** CLI works for basic queries
+**Status:** Complete
+**Success Criteria:** ✅ CLI works for basic queries
 
 ---
 
-**T1.11: MVP Testing & Documentation**
-- [ ] Run end-to-end test:
-  - Collect PRs from last 2 weeks
-  - Load to BigQuery with embeddings
+**T1.11: MVP Testing & Documentation** ✅
+- [x] Run end-to-end test:
+  - Created backfill script for loading historical data
+  - Load PRs to BigQuery with embeddings
   - Query with CLI
-- [ ] Document MVP usage in README
-- [ ] Create troubleshooting guide
-- [ ] Measure costs (should be < $20 for MVP week)
+- [x] Document MVP usage in README
+- [x] Add comprehensive backfill documentation
+- [x] Create test scripts for all components
+- [x] Verified costs within budget
 
 **Owner:** George
-**Time Estimate:** 2 hours
-**Dependencies:** T1.10
-**Success Criteria:** MVP works end-to-end, documented
+**Status:** Complete
+**Success Criteria:** ✅ MVP works end-to-end, documented
 
 ---
 
 **Phase 1 Milestone: MVP Complete ✅**
-- [ ] Can collect PRs and generate embeddings
-- [ ] Data loads to BigQuery successfully
-- [ ] Can ask 3 core questions via CLI
-- [ ] Costs < $50/month projected
-- [ ] Demo ready for stakeholders
+- [x] Can collect PRs and generate embeddings
+- [x] Data loads to BigQuery successfully (idempotent, resilient)
+- [x] Can ask questions via CLI (structured, semantic, hybrid queries)
+- [x] Costs within budget
+- [x] Comprehensive documentation and test scripts
+- [x] Ready for production use
+
+**Completion Date:** October 23, 2025
+
+**Additional Achievements:**
+- Idempotent backfill script with duplicate detection
+- Batch insert handling for large datasets
+- 7 query types implemented (exceeded initial goal of 3)
+- Created `ghoracle` convenience command
+- Built comprehensive test suite
 
 ---
 
@@ -417,7 +342,29 @@ class EmbeddingGenerator:
 
 ### Week 2: Query Completeness
 
-**T2.1: Implement All P0 Queries**
+**T2.1: Create User Lookup Table**
+- [ ] Design schema for `github_users` table:
+  - `github_login` (primary key, e.g., "gkabbz")
+  - `display_name` (e.g., "George Kaberere")
+  - `aliases` (array of common name variations)
+  - `email` (optional)
+- [ ] Update `schemas/users.yaml`
+- [ ] Create table in BigQuery
+- [ ] Populate initial user data from existing PRs
+- [ ] Update `BigQueryDataSource.find_prs_by_author()` to support name lookup
+- [ ] Add `resolve_user_name()` helper method
+- [ ] Test queries with both GitHub logins and display names
+
+**Owner:** George
+**Time Estimate:** 3 hours
+**Dependencies:** Phase 1 complete
+**Success Criteria:** Can query "George's PRs" and it resolves to "gkabbz"
+
+**Motivation:** Users will naturally ask about people by their real names (e.g., "What did George ship?") rather than GitHub handles (e.g., "What did gkabbz ship?"). This lookup table enables natural language queries.
+
+---
+
+**T2.2: Implement All P0 Queries**
 - [ ] PR Investigation queries:
   - "Who reviewed PR #X?"
   - "How long did PR #X take to merge?"
@@ -433,12 +380,12 @@ class EmbeddingGenerator:
 
 **Owner:** George
 **Time Estimate:** 8 hours
-**Dependencies:** Phase 1 complete
+**Dependencies:** T2.1
 **Success Criteria:** All P0 queries from business requirements work
 
 ---
 
-**T2.2: Build InsightSynthesizer**
+**T2.3: Build InsightSynthesizer**
 - [ ] Create `src/github_delivery/llm_synthesizer.py`
 - [ ] Implement `InsightSynthesizer` class
 - [ ] Create prompt templates for:
@@ -1038,25 +985,22 @@ Week 9-12 (Dec-Jan): [Phase 3: Scale - Integration & Rollout          ]
 
 ### Appendix A: Task Checklist
 
-**Phase 0: Setup (Days 1-2)**
-- [ ] T0.1: GCP Project Configuration
-- [ ] T0.2: Secrets Management
-- [ ] T0.3: Development Environment
-- [ ] T0.4: Create BigQuery Tables
-- [ ] T0.5: Architecture Review
+**Phase 0: Setup (Days 1-2)** ✅ COMPLETE
+- [x] T0.1: GCP Project Configuration
+- [x] T0.2: Development Environment
+- [x] T0.3: Create BigQuery Tables
 
-**Phase 1: MVP (Days 3-7)**
-- [ ] T1.1: Build EmbeddingGenerator
-- [ ] T1.2: Enhance GitHubCollector
-- [ ] T1.3: Build BigQueryLoader
-- [ ] T1.4: Build DataPipeline
-- [ ] T1.5: Build Abstract PRDataSource
-- [ ] T1.6: Implement BigQueryDataSource
-- [ ] T1.7: Build LLMClient
-- [ ] T1.8: Build LLMQueryPlanner
-- [ ] T1.9: Build SecondBrain
-- [ ] T1.10: Build MVP CLI
-- [ ] T1.11: MVP Testing & Documentation
+**Phase 1: MVP (Days 3-7)** ✅ COMPLETE
+- [x] T1.1: Build EmbeddingGenerator
+- [x] T1.2: Build BigQueryLoader (enhanced with idempotency & batching)
+- [x] T1.3: Build DataPipeline (deferred - using Airflow in Phase 2)
+- [x] T1.5: Build Abstract PRDataSource
+- [x] T1.6: Implement BigQueryDataSource
+- [x] T1.7: Build LLMClient
+- [x] T1.8: Build QueryPlanner
+- [x] T1.9: Build GitHubOracle (formerly SecondBrain)
+- [x] T1.10: Build MVP CLI
+- [x] T1.11: MVP Testing & Documentation
 
 **Phase 2: Core Features (Weeks 2-4)**
 - [ ] T2.1: Implement All P0 Queries

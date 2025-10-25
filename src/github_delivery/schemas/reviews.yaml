@@ -1,0 +1,72 @@
+# Schema for gkabbz_gh_reviews table
+# Stores PR review data with embeddings for feedback analysis
+
+table_name: gkabbz_gh_reviews
+description: "PR reviews with vector embeddings for feedback analysis"
+
+# Partitioning by review submission date
+partitioning:
+  type: DAY
+  field: submitted_at
+
+# Clustering for common query patterns
+clustering:
+  - repo_name
+  - reviewer
+  - pr_number
+
+columns:
+  # === IDENTITY ===
+  - name: review_id
+    type: INTEGER
+    mode: REQUIRED
+    description: "Unique review ID from GitHub"
+
+  - name: repo_name
+    type: STRING
+    mode: REQUIRED
+    description: "Repository name (links to prs table)"
+
+  - name: pr_number
+    type: INTEGER
+    mode: REQUIRED
+    description: "PR number (links to prs table)"
+
+  # === REVIEWER ===
+  - name: reviewer
+    type: STRING
+    mode: REQUIRED
+    description: "Reviewer GitHub username"
+
+  # === REVIEW CONTENT (for RAG) ===
+  - name: body
+    type: STRING
+    mode: NULLABLE
+    description: "Review comment text"
+
+  - name: body_embedding
+    type: FLOAT64
+    mode: REPEATED
+    description: "Vector embedding of review body (768 dimensions)"
+
+  # === REVIEW METADATA ===
+  - name: state
+    type: STRING
+    mode: REQUIRED
+    description: "Review state: APPROVED, CHANGES_REQUESTED, COMMENTED"
+
+  - name: submitted_at
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When review was submitted"
+
+  - name: html_url
+    type: STRING
+    mode: NULLABLE
+    description: "GitHub URL for this review"
+
+  # === CACHE TRACKING ===
+  - name: cached_at
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When data was cached/collected"

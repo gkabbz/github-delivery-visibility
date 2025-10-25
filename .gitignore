@@ -158,6 +158,14 @@ cython_debug/
 #  project, it is not recommended to check the .idea folder in to version control.
 .idea/
 
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
 # Output directories
 out/
 outputs/
@@ -166,3 +174,13 @@ outputs/
 .cache/
 cache/
 test_cache*/
+
+# Personal learning notes (not for version control)
+learnings.md
+
+# Test scripts in root (should be in tests/ directory)
+test_*.py
+!tests/test_*.py
+
+# Claude Code configuration
+.claude/

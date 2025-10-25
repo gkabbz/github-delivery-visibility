@@ -1,0 +1,42 @@
+# Schema for gkabbz_gh_labels table
+# Stores PR labels for categorization (no embeddings - simple keywords)
+
+table_name: gkabbz_gh_labels
+description: "PR labels for categorization"
+
+# No partitioning - small table with simple lookups
+partitioning: null
+
+# Clustering for label queries
+clustering:
+  - repo_name
+  - pr_number
+  - label_name
+
+columns:
+  # === IDENTITY ===
+  - name: repo_name
+    type: STRING
+    mode: REQUIRED
+    description: "Repository name (links to prs table)"
+
+  - name: pr_number
+    type: INTEGER
+    mode: REQUIRED
+    description: "PR number (links to prs table)"
+
+  # === LABEL INFO ===
+  - name: label_name
+    type: STRING
+    mode: REQUIRED
+    description: "Label name (e.g., bug, enhancement)"
+
+  - name: label_color
+    type: STRING
+    mode: NULLABLE
+    description: "Label color hex code"
+
+  - name: label_description
+    type: STRING
+    mode: NULLABLE
+    description: "Label description"

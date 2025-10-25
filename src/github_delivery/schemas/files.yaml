@@ -1,0 +1,70 @@
+# Schema for gkabbz_gh_files table
+# Stores file changes with patch embeddings for code analysis
+
+table_name: gkabbz_gh_files
+description: "File changes with patch embeddings for code analysis"
+
+# No partitioning - accessed via PRs which are already partitioned
+partitioning: null
+
+# Clustering for file-based queries
+clustering:
+  - repo_name
+  - pr_number
+  - filename
+
+columns:
+  # === IDENTITY ===
+  - name: repo_name
+    type: STRING
+    mode: REQUIRED
+    description: "Repository name (links to prs table)"
+
+  - name: pr_number
+    type: INTEGER
+    mode: REQUIRED
+    description: "PR number (links to prs table)"
+
+  # === FILE INFO ===
+  - name: filename
+    type: STRING
+    mode: REQUIRED
+    description: "File path (e.g., src/main.py)"
+
+  # === CHANGE METRICS ===
+  - name: additions
+    type: INTEGER
+    mode: NULLABLE
+    description: "Lines added in this file"
+
+  - name: deletions
+    type: INTEGER
+    mode: NULLABLE
+    description: "Lines deleted in this file"
+
+  - name: status
+    type: STRING
+    mode: NULLABLE
+    description: "Change status: added, deleted, modified, renamed"
+
+  # === CODE DIFF (for RAG) ===
+  - name: patch
+    type: STRING
+    mode: NULLABLE
+    description: "Code diff/patch content"
+
+  - name: patch_embedding
+    type: FLOAT64
+    mode: REPEATED
+    description: "Vector embedding of patch (768 dimensions)"
+
+  - name: patch_truncated
+    type: BOOLEAN
+    mode: NULLABLE
+    description: "Whether patch was truncated by GitHub API"
+
+  # === CACHE TRACKING ===
+  - name: cached_at
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When data was cached/collected"

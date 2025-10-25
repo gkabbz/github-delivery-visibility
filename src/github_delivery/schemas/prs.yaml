@@ -1,0 +1,123 @@
+# Schema for gkabbz_gh_prs table
+# Stores PR metadata with vector embeddings for semantic search
+
+table_name: gkabbz_gh_prs
+description: "GitHub PR metadata with vector embeddings for semantic search"
+
+# Partitioning configuration
+# Splits table by date for efficient time-based queries
+partitioning:
+  type: DAY
+  field: merged_at
+
+# Clustering configuration
+# Orders data for faster queries on these columns
+clustering:
+  - repo_name
+  - author
+  - merged_at
+
+# Column definitions
+columns:
+  # === IDENTITY ===
+  - name: repo_name
+    type: STRING
+    mode: REQUIRED
+    description: "Repository name (e.g. mozilla/bigquery-etl)"
+
+  - name: number
+    type: INTEGER
+    mode: REQUIRED
+    description: "PR number"
+
+  # === CONTENT (for RAG) ===
+  - name: title
+    type: STRING
+    mode: REQUIRED
+    description: "PR title"
+
+  - name: body
+    type: STRING
+    mode: NULLABLE
+    description: "PR description/body text"
+
+  - name: body_embedding
+    type: FLOAT64
+    mode: REPEATED # REPEATED = array in BigQuery
+    description: "Vector embedding of PR body (768 dimensions)"
+
+  # === METADATA ===
+  - name: state
+    type: STRING
+    mode: REQUIRED
+    description: "PR state: open, closed, merged"
+
+  - name: author
+    type: STRING
+    mode: REQUIRED
+    description: "PR author GitHub username"
+
+  - name: html_url
+    type: STRING
+    mode: REQUIRED
+    description: "GitHub URL for this PR"
+
+  # === TIMESTAMPS ===
+  - name: created_at
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When PR was created"
+
+  - name: updated_at
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When PR was last updated"
+
+  - name: merged_at
+    type: TIMESTAMP
+    mode: NULLABLE
+    description: "When PR was merged (null if not merged)"
+
+  - name: closed_at
+    type: TIMESTAMP
+    mode: NULLABLE
+    description: "When PR was closed"
+
+  # === BRANCH INFO ===
+  - name: base_branch
+    type: STRING
+    mode: NULLABLE
+    description: "Target branch (usually 'main')"
+
+  - name: head_branch
+    type: STRING
+    mode: NULLABLE
+    description: "Source branch"
+
+  # === SIZE METRICS ===
+  - name: additions
+    type: INTEGER
+    mode: NULLABLE
+    description: "Lines added"
+
+  - name: deletions
+    type: INTEGER
+    mode: NULLABLE
+    description: "Lines deleted"
+
+  - name: changed_files
+    type: INTEGER
+    mode: NULLABLE
+    description: "Number of files changed"
+
+  # === FLAGS ===
+  - name: draft
+    type: BOOLEAN
+    mode: NULLABLE
+    description: "Whether PR is a draft"
+
+  # === CACHE TRACKING ===
+  - name: cached_at
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When data was cached/collected"
