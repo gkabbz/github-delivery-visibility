@@ -398,13 +398,16 @@ params = [bigquery.ScalarQueryParameter("author", "STRING", user_input)]
 
 ## Testing Strategy
 
-### Unit Tests
+### Unit Tests (in `tests/` directory)
 - `test_llm_client.py` - LLM API calls
 - `test_query_planner.py` - NL → QueryPlan parsing
 - `test_bq_data_source.py` - Individual query methods
+- `test_embeddings.py` - Vector embedding generation
+- `test_bigquery_loader.py` - BigQuery data loading
 
-### Integration Tests
+### Integration Tests (in `tests/` directory)
 - `test_github_oracle.py` - End-to-end flow
+- `test_deduplication.py` - Duplicate handling
 - Tests against real BigQuery data
 - Validates LLM responses
 
@@ -412,6 +415,11 @@ params = [bigquery.ScalarQueryParameter("author", "STRING", user_input)]
 - CLI testing with various question types
 - Cost tracking for different query patterns
 - Error scenario validation
+
+### Operational Scripts (in `scripts/` directory)
+- `backfill_data.py` - Backfill historical PR data
+- `check_backfill_status.py` - Verify data in BigQuery
+- `truncate_tables.py` - Clear tables when needed
 
 ---
 

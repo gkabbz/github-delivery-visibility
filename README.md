@@ -293,7 +293,7 @@ python test_github_oracle.py
 
 ```
 gh-del-visibility/
-├── src/github_delivery/
+├── src/github_delivery/       # Main package
 │   ├── config.py              # Model configuration
 │   ├── models.py              # Data models (PullRequest, etc.)
 │   ├── data_source.py         # Abstract data source interface
@@ -303,11 +303,28 @@ gh-del-visibility/
 │   ├── github_oracle.py       # Main orchestrator
 │   ├── cli.py                 # Command-line interface
 │   ├── embeddings.py          # Vector embedding generation
-│   └── bigquery_loader.py     # Load data to BigQuery
-├── schemas/                   # BigQuery table schemas
-├── test_*.py                  # Test scripts
-├── ghoracle                   # Shortcut script
-└── README.md                  # This file
+│   ├── bigquery_loader.py     # Load data to BigQuery
+│   ├── collector.py           # GitHub PR collector
+│   └── cache.py               # PR caching system
+├── tests/                     # Test suite
+│   ├── test_bigquery_access.py
+│   ├── test_bigquery_loader.py
+│   ├── test_bq_data_source.py
+│   ├── test_github_oracle.py
+│   └── ...                    # Additional test files
+├── scripts/                   # Operational scripts
+│   ├── backfill_data.py       # Backfill historical PRs
+│   ├── check_backfill_status.py
+│   └── truncate_tables.py
+├── project_plans/             # Project documentation
+├── .gitignore                 # Git ignore rules
+├── ARCHITECTURE.md            # Architecture documentation
+├── CLAUDE.md                  # Working guidelines
+├── README.md                  # This file
+├── config.yaml                # App configuration
+├── ghoracle                   # CLI shortcut script
+├── requirements.txt           # Python dependencies
+└── setup.py                   # Package setup
 ```
 
 ## How It Works
