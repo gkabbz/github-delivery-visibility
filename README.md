@@ -202,29 +202,29 @@ GitHubOracle requires PR data in BigQuery to answer questions. Use the backfill 
 
 ```bash
 # Backfill specific date range (recommended)
-python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-31
+python scripts/backfill_data.py --start-date 2025-01-01 --end-date 2025-01-31
 
 # Backfill with just start date (end date defaults to today)
-python backfill_data.py --start-date 2025-01-01
+python scripts/backfill_data.py --start-date 2025-01-01
 
 # Test with dry-run first
-python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07 --dry-run
+python scripts/backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07 --dry-run
 
 # Verbose output for debugging
-python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07 --verbose
+python scripts/backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07 --verbose
 ```
 
 ### Examples
 
 ```bash
 # Backfill January 2025
-python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-31
+python scripts/backfill_data.py --start-date 2025-01-01 --end-date 2025-01-31
 
 # Backfill last 3 months
-python backfill_data.py --start-date 2025-07-01 --end-date 2025-10-01
+python scripts/backfill_data.py --start-date 2025-07-01 --end-date 2025-10-01
 
 # Backfill a specific week
-python backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07
+python scripts/backfill_data.py --start-date 2025-01-01 --end-date 2025-01-07
 ```
 
 ### How It Works
@@ -257,7 +257,7 @@ Example: If you backfill January, then run it again a week later:
 
 ```bash
 # Check what's in your tables
-python check_backfill_status.py
+python scripts/check_backfill_status.py
 ```
 
 This shows row counts and recent entries for each table (PRs, reviews, files, labels).
