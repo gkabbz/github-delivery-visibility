@@ -68,7 +68,7 @@ class BigQueryDataSource(PRDataSource):
         self,
         author: str,
         repo_name: Optional[str] = None,
-        limit: int = 100
+        limit: Optional[int] = None
     ) -> List[PullRequest]:
         """
         Find PRs authored by a specific user.
@@ -114,7 +114,8 @@ class BigQueryDataSource(PRDataSource):
 
         # Order by most recent first
         query += " ORDER BY created_at DESC"
-        query += f" LIMIT {limit}"
+        if limit is not None:
+            query += f" LIMIT {limit}"
 
         print(f"  SQL: {query[:100]}...")
 
@@ -193,7 +194,7 @@ class BigQueryDataSource(PRDataSource):
         self,
         reviewer: str,
         repo_name: Optional[str] = None,
-        limit: int = 100
+        limit: Optional[int] = None
     ) -> List[PullRequest]:
         """
         Find PRs reviewed by a specific user.
@@ -232,7 +233,8 @@ class BigQueryDataSource(PRDataSource):
             query += " AND p.repo_name = @repo_name"
 
         query += " ORDER BY p.created_at DESC"
-        query += f" LIMIT {limit}"
+        if limit is not None:
+            query += f" LIMIT {limit}"
 
         print(f"  SQL: {query[:100]}...")
 
@@ -266,7 +268,7 @@ class BigQueryDataSource(PRDataSource):
         start_date: datetime,
         end_date: datetime,
         repo_name: Optional[str] = None,
-        limit: int = 100
+        limit: Optional[int] = None
     ) -> List[PullRequest]:
         """
         Find PRs merged within a date range.
@@ -300,7 +302,8 @@ class BigQueryDataSource(PRDataSource):
             query += " AND repo_name = @repo_name"
 
         query += " ORDER BY merged_at DESC"
-        query += f" LIMIT {limit}"
+        if limit is not None:
+            query += f" LIMIT {limit}"
 
         print(f"  SQL: {query[:100]}...")
 
@@ -334,7 +337,7 @@ class BigQueryDataSource(PRDataSource):
         self,
         filename: str,
         repo_name: Optional[str] = None,
-        limit: int = 100
+        limit: Optional[int] = None
     ) -> List[PullRequest]:
         """
         Find PRs that changed a specific file.
@@ -372,7 +375,8 @@ class BigQueryDataSource(PRDataSource):
             query += " AND p.repo_name = @repo_name"
 
         query += " ORDER BY p.created_at DESC"
-        query += f" LIMIT {limit}"
+        if limit is not None:
+            query += f" LIMIT {limit}"
 
         print(f"  SQL: {query[:100]}...")
 
@@ -405,7 +409,7 @@ class BigQueryDataSource(PRDataSource):
         self,
         directory: str,
         repo_name: Optional[str] = None,
-        limit: int = 100
+        limit: Optional[int] = None
     ) -> List[PullRequest]:
         """
         Find PRs that changed files in a directory.
@@ -447,7 +451,8 @@ class BigQueryDataSource(PRDataSource):
             query += " AND p.repo_name = @repo_name"
 
         query += " ORDER BY p.created_at DESC"
-        query += f" LIMIT {limit}"
+        if limit is not None:
+            query += f" LIMIT {limit}"
 
         print(f"  SQL: {query[:100]}...")
 
@@ -481,7 +486,7 @@ class BigQueryDataSource(PRDataSource):
         self,
         query: str,
         repo_name: Optional[str] = None,
-        limit: int = 10
+        limit: Optional[int] = 20
     ) -> List[PullRequest]:
         """
         Find PRs by semantic similarity using vector embeddings.
@@ -529,7 +534,8 @@ class BigQueryDataSource(PRDataSource):
             sql += " AND repo_name = @repo_name"
 
         sql += " ORDER BY distance ASC"
-        sql += f" LIMIT {limit}"
+        if limit is not None:
+            sql += f" LIMIT {limit}"
 
         print(f"  SQL: {sql[:100]}...")
 

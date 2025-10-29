@@ -60,8 +60,8 @@ class QueryPlan:
     """Natural language query for semantic search."""
 
     # Result parameters
-    limit: int = 10
-    """Maximum number of results to return."""
+    limit: Optional[int] = None
+    """Maximum number of results to return (None = no limit)."""
 
     repo_name: Optional[str] = None
     """Repository to filter by (None = all repos)."""
@@ -113,15 +113,20 @@ Query Types:
 - "semantic": Use when searching by concept/meaning (e.g., "authentication changes")
 - "hybrid": Use both when combining metadata filters with semantic search
 
+Limit Guidelines:
+- Don't include "limit" unless the user asks for a specific number (e.g., "top 5", "last 10")
+- Omit "limit" for queries like "What PRs were landed?" to return all results
+- Only for semantic searches, you may add limit: 20 to get most relevant results
+
 Examples:
 Q: "What did alice ship last week?"
-A: {"query_type": "structured", "author": "alice", "start_date": "2024-10-15", "end_date": "2024-10-22", "limit": 10}
+A: {"query_type": "structured", "author": "alice", "start_date": "2024-10-15", "end_date": "2024-10-22"}
 
 Q: "Find PRs about database migrations"
-A: {"query_type": "semantic", "semantic_query": "database migrations", "limit": 10}
+A: {"query_type": "semantic", "semantic_query": "database migrations", "limit": 20}
 
 Q: "What authentication changes did bob make?"
-A: {"query_type": "hybrid", "author": "bob", "semantic_query": "authentication", "limit": 10}
+A: {"query_type": "hybrid", "author": "bob", "semantic_query": "authentication"}
 
 Today's date: {today}
 
@@ -201,6 +206,6 @@ Output ONLY the JSON, no other text."""
             directory=plan_dict.get("directory"),
             pr_number=plan_dict.get("pr_number"),
             semantic_query=plan_dict.get("semantic_query"),
-            limit=plan_dict.get("limit", 10),
+            limit=plan_dict.get("limit"),
             repo_name=repo_name or plan_dict.get("repo_name")
         )
