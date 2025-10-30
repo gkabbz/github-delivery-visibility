@@ -414,7 +414,9 @@ class BigQueryDataSource(PRDataSource):
         """
         Find PRs that changed files in a directory.
 
-        Uses LIKE pattern matching on filename.
+        Uses LIKE pattern matching on filename. Since filenames are full paths like
+        'sql/project/dataset/table/file.sql', we use '%/directory/%' pattern to match
+        the directory name anywhere in the path.
         """
         print(f"\n🔍 Searching for PRs that changed directory: {directory}")
 
@@ -457,9 +459,9 @@ class BigQueryDataSource(PRDataSource):
         print(f"  SQL: {query[:100]}...")
 
         # Configure query parameters
-        # Add % wildcard for LIKE pattern
+        # Use %/directory/% pattern to match directory anywhere in the path
         query_params = [
-            bigquery.ScalarQueryParameter("directory_pattern", "STRING", f"{directory}%"),
+            bigquery.ScalarQueryParameter("directory_pattern", "STRING", f"%/{directory}%"),
         ]
 
         if repo_name:
@@ -570,7 +572,7 @@ class BigQueryDataSource(PRDataSource):
         pr_number: int
     ) -> Optional[PullRequest]:
         """
-        Get full details of a specific PR.
+        Get full details of a specific PR including reviews and file changes.
         """
         print(f"\n🔍 Getting PR detail: {repo_name}#{pr_number}")
 
@@ -615,7 +617,106 @@ class BigQueryDataSource(PRDataSource):
         for row in results:
             pr = self._row_to_pullrequest(row)
             print(f"  ✓ Found PR: {pr.title}")
+
+            # Enrich with reviews
+            pr.reviews = self._get_pr_reviews(repo_name, pr_number)
+            if pr.reviews:
+                print(f"  ✓ Loaded {len(pr.reviews)} review(s)")
+
+            # Enrich with file stats
+            pr.file_stats = self._get_pr_files(repo_name, pr_number)
+            if pr.file_stats:
+                print(f"  ✓ Loaded {len(pr.file_stats)} file(s)")
+
             return pr
 
         print(f"  ✗ PR not found")
         return None
+
+    def _get_pr_reviews(self, repo_name: str, pr_number: int) -> List:
+        """
+        Get all reviews for a specific PR.
+
+        Args:
+            repo_name: Repository name
+            pr_number: PR number
+
+        Returns:
+            List of Review objects (as dicts for now)
+        """
+        from .models import Review, User, ReviewState
+
+        query = f"""
+        SELECT
+            reviewer,
+            state,
+            submitted_at
+        FROM `{self.reviews_table}`
+        WHERE repo_name = @repo_name AND pr_number = @pr_number
+        ORDER BY submitted_at
+        """
+
+        query_params = [
+            bigquery.ScalarQueryParameter("repo_name", "STRING", repo_name),
+            bigquery.ScalarQueryParameter("pr_number", "INT64", pr_number),
+        ]
+
+        job_config = bigquery.QueryJobConfig(query_parameters=query_params)
+        query_job = self.client.query(query, job_config=job_config)
+        results = query_job.result()
+
+        reviews = []
+        for row in results:
+            # Create a simplified review dict (we don't have all Review fields in BQ)
+            review = {
+                'reviewer': row.reviewer,
+                'state': row.state,
+                'submitted_at': row.submitted_at
+            }
+            reviews.append(review)
+
+        return reviews
+
+    def _get_pr_files(self, repo_name: str, pr_number: int) -> List:
+        """
+        Get all file changes for a specific PR.
+
+        Args:
+            repo_name: Repository name
+            pr_number: PR number
+
+        Returns:
+            List of FileStat objects (as dicts for now)
+        """
+        query = f"""
+        SELECT
+            filename,
+            additions,
+            deletions,
+            status
+        FROM `{self.files_table}`
+        WHERE repo_name = @repo_name AND pr_number = @pr_number
+        ORDER BY filename
+        """
+
+        query_params = [
+            bigquery.ScalarQueryParameter("repo_name", "STRING", repo_name),
+            bigquery.ScalarQueryParameter("pr_number", "INT64", pr_number),
+        ]
+
+        job_config = bigquery.QueryJobConfig(query_parameters=query_params)
+        query_job = self.client.query(query, job_config=job_config)
+        results = query_job.result()
+
+        files = []
+        for row in results:
+            file_stat = {
+                'filename': row.filename,
+                'additions': row.additions,
+                'deletions': row.deletions,
+                'changes': row.additions + row.deletions,  # Calculate total changes
+                'status': row.status
+            }
+            files.append(file_stat)
+
+        return files

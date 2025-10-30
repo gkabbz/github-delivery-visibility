@@ -181,6 +181,17 @@ class GitHubOracle:
                 # Truncate body to first 200 chars
                 body_preview = pr.body[:200] + "..." if len(pr.body) > 200 else pr.body
                 summary += f"  Description: {body_preview}\n"
+
+            # Add reviews if available
+            if pr.reviews:
+                summary += f"  Reviews:\n"
+                for review in pr.reviews:
+                    summary += f"    - {review['reviewer']} ({review['state']}) on {review['submitted_at'].date()}\n"
+
+            # Add file count if available
+            if pr.file_stats:
+                summary += f"  Files changed: {len(pr.file_stats)}\n"
+
             pr_summaries.append(summary)
 
         context = "\n".join(pr_summaries)
@@ -192,6 +203,9 @@ Given the user's question and a list of relevant PRs, provide a comprehensive, n
 
 Guidelines:
 - Be specific and cite PR numbers
+- IMPORTANT: Always clearly indicate whether PRs are merged or open/unmerged
+  - For merged PRs: mention the merge date (e.g., "PR #123 merged August 15, 2025")
+  - For open PRs: clearly state they are "open" or "not yet merged" (e.g., "PR #456 is currently open")
 - Summarize key information and patterns
 - If asked about time ranges, mention dates
 - Provide insights and trends when relevant"""
@@ -275,6 +289,7 @@ Your job is to extract key information and patterns from this chunk:
 - Notable authors or activity patterns
 - Important PRs that stand out
 - Date ranges covered
+- IMPORTANT: Note whether PRs are merged or still open (check if "merged" date is present)
 
 Be concise but informative. This summary will be combined with others."""
 
