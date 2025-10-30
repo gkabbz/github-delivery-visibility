@@ -94,6 +94,39 @@ ghoracle "Show database work from last month"
 
 ---
 
+### 7. BigQuery ETL Table/Dataset Queries
+
+Query by table names, datasets, or file types (for BigQuery ETL repositories):
+
+```bash
+# Query by table/view name
+ghoracle "What changed in serp_events_clients_daily?"
+ghoracle "Show me PRs for events_daily table"
+
+# Query by dataset
+ghoracle "What changed in search_derived dataset?"
+ghoracle "Find changes to telemetry dataset"
+
+# Query by file type
+ghoracle "Show me recent schema changes"
+ghoracle "What query logic changed recently?"
+ghoracle "Find metadata.yaml updates"
+
+# Combined queries
+ghoracle "What schema changes happened in search_derived?"
+ghoracle "Show query logic changes in telemetry"
+```
+
+**What it does:** Understands BigQuery ETL file structure (`sql/{project}/{dataset}/{table}/{file}`) and intelligently searches by directory or file patterns.
+
+**Recognized file types:**
+- `schema.yaml` - Table schemas
+- `metadata.yaml` - Table metadata
+- `query.sql` / `query.py` - ETL logic
+- `init.sql` - Table initialization
+
+---
+
 ## Time Ranges
 
 Natural language time expressions work:
@@ -243,14 +276,52 @@ ghoracle "Show me breaking changes"
 
 ---
 
+## Performance & Result Completeness
+
+### Complete Results by Default
+
+GitHubOracle returns **all matching PRs** by default, not just the top 10 or 20. This ensures comprehensive answers for analytical queries.
+
+**Example:** "What shipped last quarter?" returns all PRs from that period, not just a sample.
+
+### Automatic Chunked Summarization
+
+For queries with more than 20 PRs, GitHubOracle uses **chunked summarization** to handle large result sets:
+
+**How it works:**
+1. Splits PRs into chunks of 500
+2. Summarizes each chunk independently
+3. Synthesizes a comprehensive final answer
+
+**Performance by query size:**
+- **1-20 PRs**: Single LLM call, ~5-10 seconds, ~$0.001-0.003
+- **20-100 PRs**: Single chunk, ~15-25 seconds, ~$0.003-0.006
+- **100-500 PRs**: Single chunk, ~30-40 seconds, ~$0.006
+- **500-2000 PRs**: 2-4 chunks, ~60-120 seconds, ~$0.015-0.030
+
+**Quality:** No degradation in answer quality with chunking - you get the same comprehensive analysis regardless of result set size.
+
+### Query Types and Limits
+
+**Structured queries** (author, date, file, directory, reviewer):
+- No default limit - returns all matching PRs
+- Use for complete historical analysis
+
+**Semantic queries** (topic/concept search):
+- Default limit of 20 most relevant PRs
+- Uses vector similarity ranking
+- More results may not be more meaningful
+
 ## Cost per Query
 
 Typical costs (Claude Sonnet 4):
 - Simple PR lookup: ~$0.001
-- Semantic search: ~$0.002
-- Complex query with synthesis: ~$0.003
+- Semantic search (20 results): ~$0.002
+- Small query with synthesis (1-20 PRs): ~$0.003
+- Large query with chunking (100-500 PRs): ~$0.006
+- Very large query (500-2000 PRs): ~$0.015-0.030
 
-**Monthly estimate:** $10-20 for regular use (100-200 queries)
+**Monthly estimate:** $10-30 for regular use, including some large analytical queries
 
 ---
 

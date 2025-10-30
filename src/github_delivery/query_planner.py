@@ -89,7 +89,7 @@ class LLMQueryPlanner:
 
     def _build_system_prompt(self) -> str:
         """Build the system prompt for query planning."""
-        return """You are a query planning assistant for a GitHub PR database.
+        return """You are a query planning assistant for a GitHub PR database containing BigQuery ETL code.
 
 Your job is to convert natural language questions into structured query plans.
 
@@ -113,6 +113,24 @@ Query Types:
 - "semantic": Use when searching by concept/meaning (e.g., "authentication changes")
 - "hybrid": Use both when combining metadata filters with semantic search
 
+File Path Intelligence:
+The repository follows this structure: sql/{project}/{dataset}/{table_or_view}/{file}
+- Projects: moz-fx-data-shared-prod, moz-fx-data-marketing-prod, etc.
+- File types:
+  - schema.yaml: Table schema definition
+  - metadata.yaml: Table metadata
+  - query.sql or query.py: ETL transformation logic
+  - init.sql: Table initialization
+
+When users ask about tables/views:
+- "What changed in serp_events_clients_daily?" → Use directory: "serp_events_clients_daily"
+- "Show me schema changes for search_derived" → Use directory: "search_derived" + semantic: "schema"
+- "What schema changes happened recently?" → Use filename pattern for "schema.yaml"
+- "Changes to query logic in telemetry" → Use directory: "telemetry" + filename pattern "query.sql" or "query.py"
+
+For table-specific queries, use the directory containing the table name.
+For file-type queries, use semantic search or filename patterns.
+
 Limit Guidelines:
 - Don't include "limit" unless the user asks for a specific number (e.g., "top 5", "last 10")
 - Omit "limit" for queries like "What PRs were landed?" to return all results
@@ -122,11 +140,17 @@ Examples:
 Q: "What did alice ship last week?"
 A: {"query_type": "structured", "author": "alice", "start_date": "2024-10-15", "end_date": "2024-10-22"}
 
-Q: "Find PRs about database migrations"
-A: {"query_type": "semantic", "semantic_query": "database migrations", "limit": 20}
+Q: "What changed in serp_events_clients_daily?"
+A: {"query_type": "structured", "directory": "serp_events_clients_daily"}
+
+Q: "Show me recent schema changes"
+A: {"query_type": "hybrid", "semantic_query": "schema.yaml changes"}
 
 Q: "What authentication changes did bob make?"
 A: {"query_type": "hybrid", "author": "bob", "semantic_query": "authentication"}
+
+Q: "Changes to search_derived dataset"
+A: {"query_type": "structured", "directory": "search_derived"}
 
 Today's date: {today}
 
