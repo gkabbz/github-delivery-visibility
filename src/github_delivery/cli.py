@@ -178,6 +178,11 @@ Examples:
         type=str,
         help='Repository name (e.g., mozilla/bigquery-etl)'
     )
+    ask_parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Show detailed query plan, SQL, and cost information'
+    )
 
     return parser
 

@@ -179,6 +179,9 @@ test_cache*/
 learnings.md
 CLAUDE.md
 
+# User data (contains personal/team information)
+users.csv
+
 # Test scripts in root (should be in tests/ directory)
 test_*.py
 !tests/test_*.py

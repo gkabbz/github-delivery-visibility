@@ -1,0 +1,35 @@
+# Schema for gkabbz_gh_users table
+# Stores GitHub user lookup data for name and team resolution
+
+table_name: gkabbz_gh_users
+description: "GitHub user lookup table for name and team resolution"
+
+# Clustering configuration
+# Orders data for faster queries on these columns
+clustering:
+  - github_login
+  - team
+
+# Column definitions
+columns:
+  # === IDENTITY ===
+  - name: github_login
+    type: STRING
+    mode: REQUIRED
+    description: "GitHub username (primary key, e.g., 'gkabbz')"
+
+  - name: display_name
+    type: STRING
+    mode: REQUIRED
+    description: "User's real name (e.g., 'George Kaberere')"
+
+  - name: team
+    type: STRING
+    mode: NULLABLE
+    description: "Team membership (e.g., 'Data Platform Engineering')"
+
+  # === METADATA ===
+  - name: last_updated
+    type: TIMESTAMP
+    mode: REQUIRED
+    description: "When this record was last updated"

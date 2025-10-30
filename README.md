@@ -12,12 +12,19 @@ An AI-powered tool for querying GitHub repository activity using natural languag
 
 ### Key Questions You Can Ask
 
+**General queries:**
 - "What did [person] ship last week?"
 - "Tell me about PR #123"
 - "Find PRs about database migrations"
 - "What changed in the monitoring/ directory?"
 - "Who reviewed PR #456?"
 - "Find authentication-related changes"
+
+**BigQuery ETL-specific queries:**
+- "What changed in serp_events_clients_daily?"
+- "Show me recent schema changes"
+- "What query logic changed in search_derived dataset?"
+- "Find changes to telemetry tables"
 
 ## Quick Start
 
@@ -360,6 +367,65 @@ The LLM receives the PR results and generates a natural language answer:
 **Input:** List of PRs with metadata
 
 **Output:** "Alice shipped 3 PRs last week, including PR #123 which added new authentication features..."
+
+#### Chunked Summarization for Large Result Sets
+
+When queries return more than 20 PRs, GitHubOracle automatically uses **chunked summarization** to ensure comprehensive analysis:
+
+1. **Splits results into chunks** - Groups PRs into manageable chunks (500 PRs each)
+2. **Summarizes each chunk** - LLM extracts key themes, patterns, and notable PRs from each chunk
+3. **Synthesizes final answer** - Combines chunk summaries into a comprehensive response
+
+**Performance characteristics:**
+- **Small queries (≤20 PRs)**: Single LLM call, ~5-10 seconds
+- **Medium queries (50-100 PRs)**: Single chunk, ~15-20 seconds
+- **Large queries (100-500 PRs)**: Single chunk, ~30-40 seconds, ~$0.006
+- **Very large queries (500-2000 PRs)**: Multiple chunks, ~60-120 seconds, ~$0.015-0.030
+
+This ensures you get complete, thorough answers even for annual analysis with thousands of PRs.
+
+## Smart Query Features
+
+### File Path Intelligence for BigQuery ETL
+
+GitHubOracle understands the structure of BigQuery ETL repositories:
+
+**File structure:** `sql/{project}/{dataset}/{table_or_view}/{file}`
+
+**Recognized file types:**
+- `schema.yaml` - Table schema definitions
+- `metadata.yaml` - Table metadata
+- `query.sql` / `query.py` - ETL transformation logic
+- `init.sql` - Table initialization
+
+**Example queries:**
+
+```bash
+# Query by table/view name
+ghoracle "What changed in serp_events_clients_daily?"
+# → Searches the serp_events_clients_daily/ directory
+
+# Query by dataset
+ghoracle "What changed in search_derived dataset?"
+# → Searches the search_derived/ directory
+
+# Query by file type
+ghoracle "Show me recent schema changes"
+# → Searches for changes to schema.yaml files
+
+# Combined queries
+ghoracle "What query logic changed in telemetry?"
+# → Searches telemetry/ directory for query.sql/query.py changes
+```
+
+### No Query Limits by Default
+
+GitHubOracle returns **all matching results** by default, not just the top 10 or 20. This ensures:
+- Complete answers for analytical queries (e.g., "What shipped last quarter?")
+- No missing PRs in summaries
+- Comprehensive year-long analysis
+
+For semantic searches, results are ranked by relevance (top 20 by default) since more results may not be meaningful.
 
 ## Privacy & Security
 
